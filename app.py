@@ -1,29 +1,60 @@
 import streamlit as st
 from backend import get_ai_response
 
+
+# --------------------------------
+# Page Configuration
+# --------------------------------
+
 st.set_page_config(
     page_title="Gemini AI Chatbot",
     page_icon="🤖"
 )
 
+
+# --------------------------------
+# Title
+# --------------------------------
+
 st.title("🤖 Gemini AI Chatbot")
+
 st.caption("Powered by Google Gemini")
 
-# Initialize chat history
+
+# --------------------------------
+# Create Chat History
+# --------------------------------
+
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Display previous messages
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.write(message["content"])
 
-# User input
-user_input = st.chat_input("Type your message...")
+# --------------------------------
+# Display Previous Messages
+# --------------------------------
+
+for message in st.session_state.messages:
+
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+
+# --------------------------------
+# User Input
+# --------------------------------
+
+user_input = st.chat_input(
+    "Type your message..."
+)
+
+
+# --------------------------------
+# When User Sends Message
+# --------------------------------
 
 if user_input:
 
-    # Add user message
+    # Save user message
     st.session_state.messages.append({
         "role": "user",
         "content": user_input
@@ -31,23 +62,39 @@ if user_input:
 
     # Display user message
     with st.chat_message("user"):
-        st.write(user_input)
+        st.markdown(user_input)
 
-    try:
-        # Get response from Gemini
-        response = get_ai_response(
-            st.session_state.messages
-        )
 
-        # Save Gemini response
-        st.session_state.messages.append({
-            "role": "assistant",
-            "content": response
-        })
+    # --------------------------------
+    # Generate Gemini Response
+    # --------------------------------
 
-        # Display Gemini response
-        with st.chat_message("assistant"):
-            st.write(response)
+    with st.chat_message("assistant"):
 
-    except Exception as e:
-        st.error(f"Error: {e}")
+        try:
+
+            # Stream Gemini response
+            response = st.write_stream(
+                get_ai_response(
+                    st.session_state.messages
+                )
+            )
+
+        except Exception as e:
+
+            response = (
+                "Sorry, something went wrong. "
+                "Please try again."
+            )
+
+            st.error(response)
+
+
+    # --------------------------------
+    # Save Gemini Response
+    # --------------------------------
+
+    st.session_state.messages.append({
+        "role": "assistant",
+        "content": response
+    })
