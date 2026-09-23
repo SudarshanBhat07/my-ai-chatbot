@@ -25,7 +25,7 @@ def get_ai_response(messages):
     try:
         # Streaming response
         response = client.models.generate_content_stream(
-            model="gemini-3.6-flash",
+            model="gemini-3.8-flash",
             contents=conversation
         )
 
