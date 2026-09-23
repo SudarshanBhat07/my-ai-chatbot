@@ -6,6 +6,7 @@ client = genai.Client(
 )
 
 def get_ai_response(messages):
+
     conversation = ""
 
     for message in messages:
@@ -15,7 +16,7 @@ def get_ai_response(messages):
             conversation += f"Assistant: {message['content']}\n"
 
     response = client.models.generate_content(
-        model="gemini-2.5-flash",
+        model="gemini-3.6-flash",
         contents=conversation
     )
 
