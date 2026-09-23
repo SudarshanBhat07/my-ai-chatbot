@@ -1,28 +1,15 @@
-import os
-from dotenv import load_dotenv
-from google import genai
+import streamlit as st
+from openai import OpenAI
 
-load_dotenv()
-
-client = genai.Client(
-    api_key=os.getenv("GEMINI_API_KEY")
+client = OpenAI(
+    api_key=st.secrets["OPENAI_API_KEY"]
 )
-
 
 def get_ai_response(messages):
 
-    # Convert chat history into simple text
-    conversation = ""
-
-    for message in messages:
-        if message["role"] == "user":
-            conversation += f"User: {message['content']}\n"
-        else:
-            conversation += f"Assistant: {message['content']}\n"
-
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=conversation
+    response = client.responses.create(
+        model="gpt-5.6",
+        input=messages
     )
 
-    return response.text
+    return response.output_text
