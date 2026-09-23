@@ -1,56 +1,30 @@
 import streamlit as st
 from backend import get_ai_response
 
-
-# --------------------------------
-# Page Configuration
-# --------------------------------
-
+# Page settings
 st.set_page_config(
-    page_title="Gemini AI Chatbot",
+    page_title="AI Chatbot",
     page_icon="🤖"
 )
 
-
-# --------------------------------
-# Title
-# --------------------------------
-
-st.title("🤖 Gemini AI Chatbot")
-
-st.caption("Powered by Google Gemini")
+st.title("🤖 AI Chatbot")
+st.caption("Ask me anything!")
 
 
-# --------------------------------
-# Create Chat History
-# --------------------------------
-
+# Initialize chat history
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
 
-# --------------------------------
-# Display Previous Messages
-# --------------------------------
-
+# Display previous messages
 for message in st.session_state.messages:
-
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
 
-# --------------------------------
-# User Input
-# --------------------------------
+# User input
+user_input = st.chat_input("Type your message...")
 
-user_input = st.chat_input(
-    "Type your message..."
-)
-
-
-# --------------------------------
-# When User Sends Message
-# --------------------------------
 
 if user_input:
 
@@ -65,35 +39,20 @@ if user_input:
         st.markdown(user_input)
 
 
-    # --------------------------------
-    # Generate Gemini Response
-    # --------------------------------
-
+    # Generate AI response
     with st.chat_message("assistant"):
 
         try:
-
-            # Stream Gemini response
             response = st.write_stream(
-                get_ai_response(
-                    st.session_state.messages
-                )
+                get_ai_response(st.session_state.messages)
             )
 
-        except Exception as e:
-
-            response = (
-                "Sorry, something went wrong. "
-                "Please try again."
-            )
-
+        except Exception:
+            response = "Sorry, I couldn't generate a response. Please try again."
             st.error(response)
 
 
-    # --------------------------------
-    # Save Gemini Response
-    # --------------------------------
-
+    # Save AI response
     st.session_state.messages.append({
         "role": "assistant",
         "content": response
