@@ -2,7 +2,6 @@ import streamlit as st
 from google import genai
 import time
 
-# Connect to Gemini
 client = genai.Client(
     api_key=st.secrets["GEMINI_API_KEY"]
 )
@@ -10,58 +9,81 @@ client = genai.Client(
 
 def get_ai_response(messages):
 
-    # Build conversation history
+    # Build conversation
     conversation = ""
 
     for message in messages:
-
         if message["role"] == "user":
             conversation += f"User: {message['content']}\n"
-
-        elif message["role"] == "assistant":
+        else:
             conversation += f"Assistant: {message['content']}\n"
 
-    # Try up to 3 times
-    for attempt in range(3):
+    # Find models available to this API key
+    available_models = []
 
-        try:
-            response = client.models.generate_content(
-                model="gemini-3.6-flash",
-                contents=conversation
-            )
+    try:
+        for model in client.models.list():
+            if "generateContent" in model.supported_actions:
+                name = model.name.replace("models/", "")
 
-            # Return Gemini answer
-            if response.text:
-                return response.text
+                # Only use Gemini text models
+                if "gemini" in name.lower():
+                    available_models.append(name)
 
-            return "I couldn't generate a response. Please try again."
+    except Exception:
+        available_models = ["gemini-3.6-flash"]
 
-        except Exception as e:
+    # Prefer Flash models
+    flash_models = [
+        model for model in available_models
+        if "flash" in model.lower()
+    ]
 
-            error_message = str(e)
+    # Try Flash models first
+    models_to_try = flash_models + [
+        model for model in available_models
+        if model not in flash_models
+    ]
 
-            # Temporary server problem
-            if "503" in error_message or "UNAVAILABLE" in error_message:
+    # Try available models
+    for model_name in models_to_try[:5]:
 
-                if attempt < 2:
+        for attempt in range(2):
+
+            try:
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=conversation
+                )
+
+                if response.text:
+                    return response.text
+
+            except Exception as e:
+
+                error = str(e)
+
+                # Model busy - retry
+                if "503" in error or "UNAVAILABLE" in error:
+
                     time.sleep(2)
                     continue
 
-                return (
-                    "Gemini is currently experiencing high demand. "
-                    "Please try again in a moment."
-                )
+                # Model doesn't exist - try next model
+                elif "404" in error:
+                    break
 
-            # Rate limit / quota
-            elif "429" in error_message:
+                # Rate limit
+                elif "429" in error:
+                    return (
+                        "The Gemini API usage limit has been reached. "
+                        "Please try again later."
+                    )
 
-                return (
-                    "The Gemini API usage limit has been reached. "
-                    "Please try again later."
-                )
+                else:
+                    break
 
-            # Other error
-            else:
-                return f"Unable to process your request: {error_message}"
-
-    return "Unable to generate a response. Please try again."
+    return (
+        "The AI service is temporarily unavailable. "
+        "Please try again in a moment."
+    )
