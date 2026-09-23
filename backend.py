@@ -1,15 +1,22 @@
 import streamlit as st
-from openai import OpenAI
+from google import genai
 
-client = OpenAI(
-    api_key=st.secrets["OPENAI_API_KEY"]
+client = genai.Client(
+    api_key=st.secrets["GEMINI_API_KEY"]
 )
 
 def get_ai_response(messages):
+    conversation = ""
 
-    response = client.responses.create(
-        model="gpt-5.6",
-        input=messages
+    for message in messages:
+        if message["role"] == "user":
+            conversation += f"User: {message['content']}\n"
+        else:
+            conversation += f"Assistant: {message['content']}\n"
+
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=conversation
     )
 
-    return response.output_text
+    return response.text
