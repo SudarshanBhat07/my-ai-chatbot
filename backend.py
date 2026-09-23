@@ -2,7 +2,7 @@ import streamlit as st
 from google import genai
 
 
-# Create Gemini client
+# Connect to Gemini
 client = genai.Client(
     api_key=st.secrets["GEMINI_API_KEY"]
 )
@@ -10,51 +10,60 @@ client = genai.Client(
 
 def get_ai_response(messages):
 
-    # Build conversation history
+    # Only keep recent messages
+    # This prevents the request becoming too large
+    recent_messages = messages[-10:]
+
     conversation = ""
 
-    for message in messages:
+    for message in recent_messages:
+
         if message["role"] == "user":
             conversation += f"User: {message['content']}\n"
 
         elif message["role"] == "assistant":
             conversation += f"Assistant: {message['content']}\n"
 
-    conversation += "Assistant: "
+    conversation += "Assistant:"
 
     try:
-        # Streaming response
+
+        # Stream the response
         response = client.models.generate_content_stream(
-            model="gemini-3.8-flash",
+            model="gemini-3.6-flash",
             contents=conversation
         )
 
-        # Send each piece of text to app.py
         for chunk in response:
+
             if chunk.text:
                 yield chunk.text
 
+
     except Exception as e:
 
-        error_message = str(e)
+        error = str(e)
 
-        if "503" in error_message or "UNAVAILABLE" in error_message:
+        if "503" in error or "UNAVAILABLE" in error:
+
             yield (
-                "Gemini is currently experiencing high demand. "
+                "The AI service is temporarily busy. "
                 "Please try again in a moment."
             )
 
-        elif "429" in error_message:
+        elif "429" in error:
+
             yield (
-                "The Gemini API usage limit has been reached. "
+                "The API usage limit has been reached. "
                 "Please try again later."
             )
 
-        elif "404" in error_message:
+        elif "404" in error:
+
             yield (
-                "The selected Gemini model is unavailable. "
-                "Please check the model name."
+                "The selected AI model is currently unavailable."
             )
 
         else:
-            yield f"Something went wrong: {error_message}"
+
+            yield f"Error: {error}"
