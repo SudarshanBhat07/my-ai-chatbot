@@ -2,12 +2,12 @@ import streamlit as st
 from backend import get_ai_response
 
 st.set_page_config(
-    page_title="OpenAI Chatbot",
+    page_title="Gemini AI Chatbot",
     page_icon="🤖"
 )
 
-st.title("🤖 OpenAI Chatbot")
-st.caption("Ask me anything!")
+st.title("🤖 Gemini AI Chatbot")
+st.caption("Powered by Google Gemini")
 
 # Initialize chat history
 if "messages" not in st.session_state:
@@ -29,18 +29,23 @@ if user_input:
         "content": user_input
     })
 
+    # Display user message
     with st.chat_message("user"):
         st.write(user_input)
 
-    # Get response from OpenAI
     try:
-        response = get_ai_response(st.session_state.messages)
+        # Get response from Gemini
+        response = get_ai_response(
+            st.session_state.messages
+        )
 
+        # Save Gemini response
         st.session_state.messages.append({
             "role": "assistant",
             "content": response
         })
 
+        # Display Gemini response
         with st.chat_message("assistant"):
             st.write(response)
 
